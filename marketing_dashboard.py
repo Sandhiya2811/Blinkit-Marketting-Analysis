@@ -21,7 +21,7 @@ st.title("📊 Business Analytics Dashboard")
 st.caption("Marketing • Sales • Delivery • Customer Feedback – Unified Dashboard")
 
 # -------------------------------------------------
-# LOAD DATA 
+# LOAD DATA (WITH SQLALCHEMY)
 # -------------------------------------------------
 @st.cache_data
 def load_data():
@@ -89,7 +89,7 @@ filtered_df = df[
 ]
 
 # -------------------------------------------------
-# KPI METRICS 
+# KPI METRICS (SQL-based)
 # -------------------------------------------------
 st.markdown("### 🔢 Key Metrics")
 
@@ -272,7 +272,19 @@ elif analysis_type == "Sales Analysis":
 
     brand_sales = pd.read_sql(query_brand_sales, engine)
 
-    st.markdown("#### 🏷 High Revenue Brands")
+    # ----------------- Plot -----------------
+    fig_brand = px.bar(
+        brand_sales,
+        x="brand",
+        y="revenue",
+        title="🏷 Brand-wise Revenue",
+        text="revenue",
+        color_discrete_sequence=px.colors.qualitative.Pastel
+    )
+    st.plotly_chart(fig_brand, use_container_width=True)
+
+    # ----------------- Table -----------------
+    st.markdown("#### 📋 High Revenue Brands")
     st.dataframe(brand_sales, use_container_width=True)
 
     # ----------------- Business Insight -----------------
@@ -314,7 +326,7 @@ elif analysis_type == "Delivery / Operations Analysis":
     st.markdown("#### 📋 Hourly Load Table")
     st.dataframe(hourly_load, use_container_width=True)
 
-    # ----------------- Area-wise Demand -----------------
+   # ----------------- Area-wise Demand -----------------
     query_area_demand = f"""
     SELECT
         area,
@@ -328,7 +340,18 @@ elif analysis_type == "Delivery / Operations Analysis":
 
     area_demand = pd.read_sql(query_area_demand, engine)
 
-    st.markdown("#### 📍 Area-wise Demand")
+    # ----------------- Plot -----------------
+    fig_area = px.bar(
+        area_demand,
+        x="area",
+        y="orders",
+        title="📍 Area-wise Orders",
+        text="orders"
+    )
+    st.plotly_chart(fig_area, use_container_width=True)
+
+    # ----------------- Table -----------------
+    st.markdown("#### 📋 Area-wise Demand Table")
     st.dataframe(area_demand, use_container_width=True)
 
     # ----------------- Business Insight -----------------
@@ -393,6 +416,8 @@ else:
     )
     st.plotly_chart(fig, use_container_width=True)
 
+    st.markdown("#### 📋 negative_feedbacks")
+    st.dataframe(negative_feedback_spike, use_container_width=True)
 
     st.markdown("### 🧠 Business Insight")
     st.warning("""
@@ -432,5 +457,4 @@ if show_raw:
         raw_data = pd.read_sql(query_raw_data, engine)
 
         st.dataframe(raw_data, use_container_width=True, height=600)
-
 
