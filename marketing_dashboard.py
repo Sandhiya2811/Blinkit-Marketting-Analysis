@@ -21,7 +21,7 @@ st.title("📊 Business Analytics Dashboard")
 st.caption("Marketing • Sales • Delivery • Customer Feedback – Unified Dashboard")
 
 # -------------------------------------------------
-# LOAD DATA (WITH SQLALCHEMY)
+# LOAD DATA 
 # -------------------------------------------------
 @st.cache_data
 def load_data():
@@ -89,7 +89,7 @@ filtered_df = df[
 ]
 
 # -------------------------------------------------
-# KPI METRICS (SQL-based)
+# KPI METRICS 
 # -------------------------------------------------
 st.markdown("### 🔢 Key Metrics")
 
@@ -432,4 +432,5 @@ if show_raw:
         raw_data = pd.read_sql(query_raw_data, engine)
 
         st.dataframe(raw_data, use_container_width=True, height=600)
+
 
