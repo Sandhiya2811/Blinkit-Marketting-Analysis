@@ -1,14 +1,15 @@
 import streamlit as st
 import pandas as pd
-import mysql.connector
 import plotly.graph_objects as go
 import plotly.express as px
 from datetime import timedelta
 from sqlalchemy import create_engine
 
-
+# -------------------------------------------------
+# DATABASE ENGINE
+# -------------------------------------------------
 engine = create_engine(
-    "mysql+mysqlconnector://root:Subash%4028@localhost:3306/practice"
+    "mysql+mysqlconnector://root:Subash%4028@localhost:3306/blinkit"
 )
 
 # -------------------------------------------------
@@ -20,55 +21,18 @@ st.title("📊 Business Analytics Dashboard")
 st.caption("Marketing • Sales • Delivery • Customer Feedback – Unified Dashboard")
 
 # -------------------------------------------------
-# LOAD DATA (ONE SOURCE) #
+# LOAD DATA (WITH SQLALCHEMY)
 # -------------------------------------------------
 @st.cache_data
 def load_data():
-    conn = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="Subash@28",
-        database="blinkit"
-    )
+    query = "SELECT * FROM blinkit_data;"
+    df = pd.read_sql(query, engine)
 
-    query = """
-    SELECT
-        order_id,
-        order_day_only,
-        order_day_name,
-        order_month_name,
-        order_hour,
-        promised_date,
-        revenue_generated,
-        spend,
-        roas,
-        order_total,
-        total_orders,
-        delay_minutes,
-        delivery_status,
-        customer_name,
-        area,
-        pincode,
-        customer_segment,
-        rating,
-        sentiment,
-        campaign_name,
-        channel,
-        brand,
-        category,
-        item_total,
-        quantity
-    FROM blinkit_data
-    """
-
-    df = pd.read_sql(query, conn)
-    conn.close()
-
+    # Convert date columns to datetime
     df["order_day_only"] = pd.to_datetime(df["order_day_only"])
     df["promised_date"] = pd.to_datetime(df["promised_date"])
-
+    
     return df
-
 
 df = load_data()
 
@@ -105,10 +69,16 @@ elif date_option == "Last 30 Days":
     start_date = max_date - timedelta(days=30)
     end_date = max_date
 else:
-    start_date, end_date = st.sidebar.date_input(
-        "Select Date Range",
-        value=(min_date, max_date)
+    # Separate start and end date pickers
+    start_date = st.sidebar.date_input(
+        "Select Start Date",
+        value=min_date
     )
+    end_date = st.sidebar.date_input(
+        "Select End Date",
+        value=max_date
+    )
+
 
 # -------------------------------------------------
 # FILTER DATA
@@ -138,11 +108,62 @@ c4.metric("⏱ Avg Delay", f"{avg_delay} mins")
 st.divider()
 
 # =================================================
-# ANALYSIS SECTIONS (REFILLED – STRONG)
+# ANALYSIS SECTIONS
 # =================================================
 
+# ---------------- TIME BASED PERFORMANCE ----------------  
+if analysis_type == "Time-based Performance":
+    st.subheader("📊 Time-based Performance (Revenue vs Ad Spend)")
+
+    daily_perf = filtered_df.groupby("order_day_only").agg(
+        revenue=("revenue_generated", "sum"),
+        spend=("spend", "sum")
+    ).reset_index()
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=daily_perf["order_day_only"],
+        y=daily_perf["revenue"],
+        mode="lines+markers",
+        name="Revenue",
+        line=dict(color="green", width=3)
+    ))
+    fig.add_trace(go.Bar(
+        x=daily_perf["order_day_only"],
+        y=daily_perf["spend"],
+        name="Ad Spend",
+        marker_color="red",
+        opacity=0.6,
+        yaxis="y2"
+    ))
+    fig.update_layout(
+        xaxis_title="Date",
+        yaxis=dict(title="Revenue"),
+        yaxis2=dict(title="Ad Spend", overlaying="y", side="right"),
+        height=520
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.markdown("#### 📍 Daily Revenue & Ad Spend Table")
+    st.dataframe(daily_perf, use_container_width=True)
+
+    st.markdown("### 🧠 Visual Business Insight")
+    st.warning("""
+    🔴 Ad Spend is high on some days  
+    🟢 But Revenue is not increasing at the same level  
+
+    👉 What this shows clearly:
+    Even after spending more on ads, sales are not growing consistently.
+
+    📌 Business meaning:
+    - Some ad spends are not giving returns
+    - Marketing budget is being wasted on certain days
+    - We should spend more only on days where revenue increases
+    """)
+
+
 # ---------------- MARKETING ----------------
-if analysis_type == "Marketing Analysis":
+elif analysis_type == "Marketing Analysis":
     st.subheader("📢 Marketing Performance")
 
     campaign_perf = filtered_df.groupby(
@@ -153,8 +174,7 @@ if analysis_type == "Marketing Analysis":
     ).reset_index()
 
     campaign_perf["roi"] = (
-        campaign_perf["total_revenue"] /
-        campaign_perf["total_spend"].replace(0, None)
+        campaign_perf["total_revenue"] / campaign_perf["total_spend"].replace(0, None)
     ).round(2)
 
     fig = px.bar(
@@ -169,18 +189,13 @@ if analysis_type == "Marketing Analysis":
     st.markdown("#### 📋 Campaign Performance Table")
     st.dataframe(campaign_perf, use_container_width=True)
     
-    # -------------------------------
-    # INSIGHT SECTION (FOR MARKETTING)
-    # -------------------------------
     st.markdown("### 🧠 Business Insight")
-
     st.warning("""
     - We should increase spending only on days where revenue increases
     - Spend more on campaigns and days that give high profit
     - Spend less on days with low revenue
     - Stop campaigns with very poor ROI
-    """
-    )
+    """)
 
 # ---------------- SALES ----------------
 elif analysis_type == "Sales Analysis":
@@ -203,7 +218,6 @@ elif analysis_type == "Sales Analysis":
         mode="lines+markers",
         name="Revenue"
     )
-
     st.plotly_chart(fig, use_container_width=True)
 
     st.markdown("#### 📋 Day-wise Sales Table")
@@ -215,18 +229,13 @@ elif analysis_type == "Sales Analysis":
 
     st.markdown("#### 🏷 High Revenue Brands")
     st.dataframe(brand_sales, use_container_width=True)
-    
-    # -------------------------------
-    # INSIGHT SECTION (SALES ANALYSIS)
-    # -------------------------------
-    st.markdown("### 🧠 Business Insight")
 
+    st.markdown("### 🧠 Business Insight")
     st.warning("""
     - Run discounts on low-revenue days.
     - Stock and deliver enough on high-demand days.
     - Look at weekly trends to predict orders and plan marketing.
-        """
-    )
+    """)
 
 # ---------------- DELIVERY ----------------
 elif analysis_type == "Delivery / Operations Analysis":
@@ -256,94 +265,14 @@ elif analysis_type == "Delivery / Operations Analysis":
 
     st.markdown("#### 📍 Area-wise Demand")
     st.dataframe(area_demand, use_container_width=True)
-    
-    # -------------------------------
-    # INSIGHT SECTION (DELIVERY ANALYSIS)
-    # -------------------------------
-    st.markdown("### 🧠 Business Insight")
 
+    st.markdown("### 🧠 Business Insight")
     st.warning("""
     - Increase delivery staff when orders are high
     - Stock popular products before peak hours.
     - Use timed offers to reduce peak orders.
     - Check busy-hour data to forecast delays.
-            """
-    )
-    
-    
-# ---------------- TIME BASED PERFORMANCE ----------------  
-
-elif analysis_type == "Time-based Performance":
-    st.subheader("📊 Time-based Performance (Revenue vs Ad Spend)")
-
-    # -----------------------------
-    # DAILY AGGREGATION
-    # -----------------------------
-    daily_perf = filtered_df.groupby("order_day_only").agg(
-        revenue=("revenue_generated", "sum"),
-        spend=("spend", "sum")
-    ).reset_index()
-
-    fig = go.Figure()
-
-    # Revenue – Green Line
-    fig.add_trace(
-        go.Scatter(
-            x=daily_perf["order_day_only"],
-            y=daily_perf["revenue"],
-            mode="lines+markers",
-            name="Revenue",
-            line=dict(color="green", width=3)
-        )
-    )
-
-    # Ad Spend – Red Bars
-    fig.add_trace(
-        go.Bar(
-            x=daily_perf["order_day_only"],
-            y=daily_perf["spend"],
-            name="Ad Spend",
-            marker_color="red",
-            opacity=0.6,
-            yaxis="y2"
-        )
-    )
-
-    fig.update_layout(
-        xaxis_title="Date",
-        yaxis=dict(title="Revenue"),
-        yaxis2=dict(
-            title="Ad Spend",
-            overlaying="y",
-            side="right"
-        ),
-        height=520
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
-    
-    st.markdown("#### 📍 Area-wise Demand")
-    st.dataframe(daily_perf, use_container_width=True)
-
-
-    # -----------------------------
-    # BUSINESS INSIGHT
-    # -----------------------------
-    st.markdown("### 🧠 Visual Business Insight")
-    st.warning(
-        """
-    🔴 Ad Spend is high on some days  
-    🟢 But Revenue is not increasing at the same level  
-
-    👉 What this shows clearly:
-    Even after spending more on ads, sales are not growing consistently.
-
-    📌 Business meaning:
-    - Some ad spends are not giving returns
-    - Marketing budget is being wasted on certain days
-    - We should spend more only on days where revenue increases
-    """
-    )
+    """)
 
 
 # ---------------- FEEDBACK ----------------
@@ -365,34 +294,39 @@ else:
 
     st.markdown("#### 📋 Rating vs Sales")
     st.dataframe(rating_sales, use_container_width=True)
-    
-    negative_trend = filtered_df[
-        filtered_df["sentiment"] == "negative"
-    ].groupby("promised_date").size().reset_index(name="negative_feedbacks")
 
-    st.markdown("#### ⚠ Negative Feedback Trend")
-    st.dataframe(negative_trend, use_container_width=True)
-    
-    # -------------------------------
-    # INSIGHT SECTION (FEEDBACK ANALYSIS)
-    # -------------------------------
+    # ---------------- Negative Feedback Trend (Pandas, date-option dependent) ----------------
+    negative_feedback_spike = (
+        filtered_df[filtered_df["sentiment"].str.lower() == "negative"]  # case-insensitive
+        .groupby("promised_date")
+        .agg(negative_feedbacks=("order_id", "count"))  # feedback_id illa na order_id use panna
+        .reset_index()
+        .sort_values("promised_date", ascending=False)
+    )
+
+    # Plot bar/line chart exactly like rating_sales example
+    fig = px.line(
+        negative_feedback_spike,
+        x="promised_date",
+        y="negative_feedbacks",
+        title="📉 Negative Feedbacks Over Time",
+        markers=True
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
     st.markdown("### 🧠 Business Insight")
-
     st.warning("""
     - Give good service to get good ratings.
     - Fix complaints fast.
     - Use feedback to make things better.
     - Ask happy customers to buy again and refer friends.
-            """
-    )
-  
+    """)
 
 # -------------------------------------------------
-# RAW DATA (FIRST CODE STYLE)
+# RAW DATA
 # -------------------------------------------------
 if show_raw:
     with st.expander("📂 View Raw Data"):
-        
         raw_columns = [
             "order_day_only", "customer_name", "area", "pincode",
             "customer_segment", "campaign_name", "channel",
@@ -400,12 +334,5 @@ if show_raw:
             "spend", "roas", "delivery_status", "delay_minutes",
             "rating", "sentiment"
         ]
-
         filtered_df_display = filtered_df[raw_columns]
-
-        st.dataframe(
-            filtered_df_display,
-            use_container_width=True,
-            height=600
-        )
-
+        st.dataframe(filtered_df_display, use_container_width=True, height=600)
