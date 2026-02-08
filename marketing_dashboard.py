@@ -69,7 +69,7 @@ elif date_option == "Last 30 Days":
     start_date = max_date - timedelta(days=30)
     end_date = max_date
 else:
-    
+    # Separate start and end date pickers
     start_date = st.sidebar.date_input(
         "Select Start Date",
         value=min_date
@@ -89,23 +89,31 @@ filtered_df = df[
 ]
 
 # -------------------------------------------------
-# KPI METRICS
+# KPI METRICS (SQL-based)
 # -------------------------------------------------
 st.markdown("### 🔢 Key Metrics")
 
+query_kpis = f"""
+SELECT
+    SUM(revenue_generated) AS total_revenue,
+    SUM(spend) AS total_spend,
+    AVG(roas) AS avg_roas,
+    AVG(delay_minutes) AS avg_delay
+FROM blinkit_data
+WHERE order_day_only BETWEEN '{start_date}' AND '{end_date}';
+"""
+
+kpi_df = pd.read_sql(query_kpis, engine)
+
 c1, c2, c3, c4 = st.columns(4)
 
-total_revenue = filtered_df["revenue_generated"].sum()
-total_spend = filtered_df["spend"].sum()
-avg_roas = round(filtered_df["roas"].mean(), 2)
-avg_delay = round(filtered_df["delay_minutes"].mean(), 1)
-
-c1.metric("💰 Revenue", f"₹{total_revenue:,.0f}")
-c2.metric("📢 Ad Spend", f"₹{total_spend:,.0f}")
-c3.metric("📈 Avg ROAS", avg_roas)
-c4.metric("⏱ Avg Delay", f"{avg_delay} mins")
+c1.metric("💰 Revenue", f"₹{kpi_df['total_revenue'].iloc[0]:,.0f}")
+c2.metric("📢 Ad Spend", f"₹{kpi_df['total_spend'].iloc[0]:,.0f}")
+c3.metric("📈 Avg ROAS", round(kpi_df['avg_roas'].iloc[0], 2))
+c4.metric("⏱ Avg Delay", f"{round(kpi_df['avg_delay'].iloc[0], 1)} mins")
 
 st.divider()
+
 
 # =================================================
 # ANALYSIS SECTIONS
@@ -115,10 +123,19 @@ st.divider()
 if analysis_type == "Time-based Performance":
     st.subheader("📊 Time-based Performance (Revenue vs Ad Spend)")
 
-    daily_perf = filtered_df.groupby("order_day_only").agg(
-        revenue=("revenue_generated", "sum"),
-        spend=("spend", "sum")
-    ).reset_index()
+    query_daily = f"""
+    SELECT
+        order_day_only,
+        SUM(revenue_generated) AS revenue,
+        SUM(spend) AS spend
+    FROM blinkit_data
+    WHERE order_day_only BETWEEN '{start_date}' AND '{end_date}'
+    GROUP BY order_day_only
+    ORDER BY order_day_only;
+    """
+
+    daily_perf = pd.read_sql(query_daily, engine)
+
 
     fig = go.Figure()
     fig.add_trace(go.Scatter(
@@ -144,8 +161,10 @@ if analysis_type == "Time-based Performance":
     )
     st.plotly_chart(fig, use_container_width=True)
 
+
     st.markdown("#### 📍 Daily Revenue & Ad Spend Table")
     st.dataframe(daily_perf, use_container_width=True)
+
 
     st.markdown("### 🧠 Visual Business Insight")
     st.warning("""
@@ -166,16 +185,21 @@ if analysis_type == "Time-based Performance":
 elif analysis_type == "Marketing Analysis":
     st.subheader("📢 Marketing Performance")
 
-    campaign_perf = filtered_df.groupby(
-        ["campaign_name", "channel"]
-    ).agg(
-        total_spend=("spend", "sum"),
-        total_revenue=("order_total", "sum")
-    ).reset_index()
+    query_campaign = f"""
+    SELECT
+        campaign_name,
+        channel,
+        SUM(spend) AS total_spend,
+        SUM(order_total) AS total_revenue,
+        ROUND(SUM(order_total)/NULLIF(SUM(spend),0),2) AS roi
+    FROM blinkit_data
+    WHERE order_day_only BETWEEN '{start_date}' AND '{end_date}'
+    GROUP BY campaign_name, channel
+    ORDER BY roi DESC;
+    """
 
-    campaign_perf["roi"] = (
-        campaign_perf["total_revenue"] / campaign_perf["total_spend"].replace(0, None)
-    ).round(2)
+    campaign_perf = pd.read_sql(query_campaign, engine)
+
 
     fig = px.bar(
         campaign_perf,
@@ -186,9 +210,10 @@ elif analysis_type == "Marketing Analysis":
     )
     st.plotly_chart(fig, use_container_width=True)
 
+
     st.markdown("#### 📋 Campaign Performance Table")
     st.dataframe(campaign_perf, use_container_width=True)
-    
+
     st.markdown("### 🧠 Business Insight")
     st.warning("""
     - We should increase spending only on days where revenue increases
@@ -201,11 +226,21 @@ elif analysis_type == "Marketing Analysis":
 elif analysis_type == "Sales Analysis":
     st.subheader("🛒 Sales Analysis")
 
-    day_sales = filtered_df.groupby("order_day_name").agg(
-        total_orders=("order_id", "count"),
-        total_revenue=("order_total", "sum")
-    ).reset_index()
+    # ----------------- Day-wise Sales -----------------
+    query_day_sales = f"""
+    SELECT
+        order_day_name,
+        COUNT(order_id) AS total_orders,
+        SUM(order_total) AS total_revenue
+    FROM blinkit_data
+    WHERE order_day_only BETWEEN '{start_date}' AND '{end_date}'
+    GROUP BY order_day_name
+    ORDER BY FIELD(order_day_name, 'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday');
+    """
 
+    day_sales = pd.read_sql(query_day_sales, engine)
+
+    # ----------------- Figure -----------------
     fig = px.bar(
         day_sales,
         x="order_day_name",
@@ -220,16 +255,27 @@ elif analysis_type == "Sales Analysis":
     )
     st.plotly_chart(fig, use_container_width=True)
 
+    # ----------------- Table -----------------
     st.markdown("#### 📋 Day-wise Sales Table")
     st.dataframe(day_sales, use_container_width=True)
 
-    brand_sales = filtered_df.groupby("brand").agg(
-        revenue=("order_total", "sum")
-    ).reset_index().sort_values("revenue", ascending=False)
+    # ----------------- Brand-wise Revenue -----------------
+    query_brand_sales = f"""
+    SELECT
+        brand,
+        SUM(order_total) AS revenue
+    FROM blinkit_data
+    WHERE order_day_only BETWEEN '{start_date}' AND '{end_date}'
+    GROUP BY brand
+    ORDER BY revenue DESC;
+    """
+
+    brand_sales = pd.read_sql(query_brand_sales, engine)
 
     st.markdown("#### 🏷 High Revenue Brands")
     st.dataframe(brand_sales, use_container_width=True)
 
+    # ----------------- Business Insight -----------------
     st.markdown("### 🧠 Business Insight")
     st.warning("""
     - Run discounts on low-revenue days.
@@ -237,14 +283,24 @@ elif analysis_type == "Sales Analysis":
     - Look at weekly trends to predict orders and plan marketing.
     """)
 
+
 # ---------------- DELIVERY ----------------
 elif analysis_type == "Delivery / Operations Analysis":
     st.subheader("🚚 Delivery & Operations")
 
-    hourly_load = filtered_df.groupby("order_hour").agg(
-        orders=("order_id", "count"),
-        revenue=("order_total", "sum")
-    ).reset_index()
+    # ----------------- Hourly Load -----------------
+    query_hourly_load = f"""
+    SELECT
+        order_hour,
+        COUNT(order_id) AS orders,
+        SUM(order_total) AS revenue
+    FROM blinkit_data
+    WHERE order_day_only BETWEEN '{start_date}' AND '{end_date}'
+    GROUP BY order_hour
+    ORDER BY order_hour;
+    """
+
+    hourly_load = pd.read_sql(query_hourly_load, engine)
 
     fig = px.line(
         hourly_load,
@@ -258,20 +314,30 @@ elif analysis_type == "Delivery / Operations Analysis":
     st.markdown("#### 📋 Hourly Load Table")
     st.dataframe(hourly_load, use_container_width=True)
 
-    area_demand = filtered_df.groupby("area").agg(
-        orders=("order_id", "count"),
-        revenue=("order_total", "sum")
-    ).reset_index().sort_values("orders", ascending=False)
+    # ----------------- Area-wise Demand -----------------
+    query_area_demand = f"""
+    SELECT
+        area,
+        COUNT(order_id) AS orders,
+        SUM(order_total) AS revenue
+    FROM blinkit_data
+    WHERE order_day_only BETWEEN '{start_date}' AND '{end_date}'
+    GROUP BY area
+    ORDER BY orders DESC;
+    """
+
+    area_demand = pd.read_sql(query_area_demand, engine)
 
     st.markdown("#### 📍 Area-wise Demand")
     st.dataframe(area_demand, use_container_width=True)
 
+    # ----------------- Business Insight -----------------
     st.markdown("### 🧠 Business Insight")
     st.warning("""
     - Increase delivery staff when orders are high
-    - Stock popular products before peak hours.
-    - Use timed offers to reduce peak orders.
-    - Check busy-hour data to forecast delays.
+    - Stock popular products before peak hours
+    - Use timed offers to reduce peak orders
+    - Check busy-hour data to forecast delays
     """)
 
 
@@ -279,10 +345,19 @@ elif analysis_type == "Delivery / Operations Analysis":
 else:
     st.subheader("💬 Customer Feedback Analysis")
 
-    rating_sales = filtered_df.groupby("rating").agg(
-        orders=("order_id", "count"),
-        revenue=("order_total", "sum")
-    ).reset_index()
+    # ----------------- Rating-wise Sales -----------------
+    query_rating_sales = f"""
+    SELECT
+        rating,
+        COUNT(order_id) AS orders,
+        SUM(order_total) AS revenue
+    FROM blinkit_data
+    WHERE order_day_only BETWEEN '{start_date}' AND '{end_date}'
+    GROUP BY rating
+    ORDER BY rating;
+    """
+
+    rating_sales = pd.read_sql(query_rating_sales, engine)
 
     fig = px.bar(
         rating_sales,
@@ -295,16 +370,20 @@ else:
     st.markdown("#### 📋 Rating vs Sales")
     st.dataframe(rating_sales, use_container_width=True)
 
-    # ---------------- Negative Feedback Trend (Pandas, date-option dependent) ----------------
-    negative_feedback_spike = (
-        filtered_df[filtered_df["sentiment"].str.lower() == "negative"]  # case-insensitive
-        .groupby("promised_date")
-        .agg(negative_feedbacks=("order_id", "count"))  # feedback_id illa na order_id use panna
-        .reset_index()
-        .sort_values("promised_date", ascending=False)
-    )
+    # ----------------- Negative Feedback Trend -----------------
+    query_negative_feedback = f"""
+    SELECT
+        promised_date,
+        COUNT(order_id) AS negative_feedbacks
+    FROM blinkit_data
+    WHERE sentiment = 'negative'
+      AND order_day_only BETWEEN '{start_date}' AND '{end_date}'
+    GROUP BY promised_date
+    ORDER BY promised_date DESC;
+    """
 
-    # Plot bar/line chart exactly like rating_sales example
+    negative_feedback_spike = pd.read_sql(query_negative_feedback, engine)
+
     fig = px.line(
         negative_feedback_spike,
         x="promised_date",
@@ -313,6 +392,7 @@ else:
         markers=True
     )
     st.plotly_chart(fig, use_container_width=True)
+
 
     st.markdown("### 🧠 Business Insight")
     st.warning("""
@@ -327,13 +407,29 @@ else:
 # -------------------------------------------------
 if show_raw:
     with st.expander("📂 View Raw Data"):
-        raw_columns = [
-            "order_day_only", "customer_name", "area", "pincode",
-            "customer_segment", "campaign_name", "channel",
-            "order_total", "total_orders", "revenue_generated",
-            "spend", "roas", "delivery_status", "delay_minutes",
-            "rating", "sentiment"
-        ]
-        filtered_df_display = filtered_df[raw_columns]
-        st.dataframe(filtered_df_display, use_container_width=True, height=600)
+        query_raw_data = f"""
+        SELECT
+            order_day_only,
+            customer_name,
+            area,
+            pincode,
+            customer_segment,
+            campaign_name,
+            channel,
+            order_total,
+            total_orders,
+            revenue_generated,
+            spend,
+            roas,
+            delivery_status,
+            delay_minutes,
+            rating,
+            sentiment
+        FROM blinkit_data
+        ORDER BY order_day_only DESC;
+        """
+
+        raw_data = pd.read_sql(query_raw_data, engine)
+
+        st.dataframe(raw_data, use_container_width=True, height=600)
 
