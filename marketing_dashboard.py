@@ -69,7 +69,7 @@ elif date_option == "Last 30 Days":
     start_date = max_date - timedelta(days=30)
     end_date = max_date
 else:
-    # Separate start and end date pickers
+    
     start_date = st.sidebar.date_input(
         "Select Start Date",
         value=min_date
@@ -336,3 +336,4 @@ if show_raw:
         ]
         filtered_df_display = filtered_df[raw_columns]
         st.dataframe(filtered_df_display, use_container_width=True, height=600)
+
