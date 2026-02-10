@@ -1,5 +1,7 @@
 # 🛒 Blinkit Business Analysis Platform
 
+# file_name: blinkit_project.ipynb
+
 ## 📌 Project Overview
 This project focuses on building a **Business Decision Platform** for Blinkit by integrating **6 different datasets**, merging them into a **single SQL table**, and performing **end-to-end business analysis**.
 
@@ -225,7 +227,7 @@ This allows:
 - Faster predictions in production
 
 Saved file:
-- `delivery_delay_model.pkl`
+- `blinkit_best__model.pkl`
 
 ---
 
@@ -250,4 +252,357 @@ The saved Pickle model can be loaded and used to:
 - Model retraining with live data
 - Classification of high-risk delayed orders
 - Explainable AI for delay reasons
+
+---
+
+# file_name: marketing_dashboard.py
+
+## 🖥️ Streamlit Business Analytics Dashboard
+
+This project includes an **interactive Streamlit dashboard** built on top of the unified SQL table (`blinkit_data`).  
+The dashboard acts as a **central Business Analytics Platform** for multiple teams.
+
+---
+
+## ⚙️ Dashboard Tech Stack
+- **Streamlit** – UI & interaction
+- **Pandas** – data handling
+- **SQLAlchemy** – database connection
+- **MySQL** – backend database
+- **Plotly (Express & Graph Objects)** – interactive visualizations
+
+---
+
+## 🔗 Database Connection
+- The dashboard connects directly to a **MySQL database**
+- Data is fetched from a single consolidated table:
+
+**`blinkit_data`**
+
+This ensures:
+- Faster querying
+- Consistent data across all analyses
+- Centralized business logic
+
+---
+
+## 🎛️ Dashboard Controls
+The sidebar provides dynamic controls for analysis:
+
+- **Analysis Type Selection**
+  - Time-based Performance
+  - Marketing Analysis
+  - Sales Analysis
+  - Delivery / Operations Analysis
+  - Customer Feedback Analysis
+
+- **Date Filters**
+  - Last 7 Days
+  - Last 30 Days
+  - Custom Date Range
+
+- **Raw Data Toggle**
+  - Option to view raw SQL data in tabular format
+
+---
+
+## 🔢 Key Performance Indicators (KPIs)
+The dashboard displays real-time KPIs based on selected date range:
+
+- 💰 Total Revenue
+- 📢 Total Marketing Spend
+- 📈 Average ROAS
+- ⏱ Average Delivery Delay (minutes)
+
+These KPIs give a quick business health snapshot.
+
+---
+
+## 📊 Analysis Modules
+
+### 1️⃣ Time-based Performance
+**Focus:** Revenue vs Ad Spend over time
+
+- Daily revenue trend
+- Daily marketing spend comparison
+- Dual-axis visualization (line + bar)
+
+**Business Insight:**
+- Identifies days where high ad spend does not convert into revenue
+- Helps optimize marketing budget allocation
+
+---
+
+### 2️⃣ Marketing Analysis
+**Focus:** Campaign & Channel effectiveness
+
+- ROI by campaign and marketing channel
+- Spend vs revenue comparison
+- Identification of high and low-performing campaigns
+
+**Business Insight:**
+- Increase budget for high ROI campaigns
+- Stop or optimize low-performing campaigns
+
+---
+
+### 3️⃣ Sales Analysis
+**Focus:** Revenue & order behavior
+
+- Orders and revenue by day of the week
+- Brand-wise revenue analysis
+- Identification of high-performing brands
+
+**Business Insight:**
+- Helps plan discounts and inventory
+- Identifies peak sales days and strong brands
+
+---
+
+### 4️⃣ Delivery / Operations Analysis
+**Focus:** Delivery efficiency and demand patterns
+
+- Hourly order load (peak hour detection)
+- Area-wise demand analysis
+- Revenue contribution by time and location
+
+**Business Insight:**
+- Optimize delivery partner allocation
+- Reduce delivery delays during peak hours
+- Improve area-wise stocking strategy
+
+---
+
+### 5️⃣ Customer Feedback Analysis
+**Focus:** Customer satisfaction impact
+
+- Rating vs orders & revenue
+- Negative feedback trend over time
+- Sentiment-based performance analysis
+
+**Business Insight:**
+- Detect service quality issues early
+- Correlate customer sentiment with sales drop
+- Improve customer retention strategies
+
+---
+
+## 📂 Raw Data Viewer
+- Users can view filtered raw data directly from SQL
+- Helps validate analysis and ensures transparency
+- Useful for debugging and detailed investigation
+
+---
+
+## 📈 Dashboard Benefits
+- Single platform for all business teams
+- Interactive and real-time analysis
+- Easy to understand business insights
+- Scalable for future ML integration
+
+---
+
+## 🔮 Future Enhancements
+- ML-based delivery delay prediction integration
+- Real-time alert system for delays and sales drop
+- Role-based dashboards for different teams
+- Deployment on cloud (AWS / GCP)
+
+---
+
+## 🧠 Summary
+This Streamlit dashboard transforms raw Blinkit data into **actionable business insights**, enabling smarter decisions across **Marketing, Sales, Operations, and Customer Experience** teams.
+
+---
+
+## Overall Insighta
+
+### Products
+
+- Prioritize high-selling and high-margin products.
+
+- Bundle slow-moving products with popular ones to increase sales.
+
+### Offers & Discounts
+
+- Give festival or seasonal discounts to attract customers.
+
+- Run targeted promotions on low-sales days to boost revenue.
+
+### Delivery Staff / Operations
+
+- Increase delivery staff during peak hours or high-demand days.
+
+- Reward best-performing delivery partners with bonuses.
+
+### Stock & Inventory
+
+- Ensure sufficient stock for high-demand areas and products.
+
+- Use inventory trends to avoid stockouts and lost sales.
+
+### Marketing & Campaigns
+
+- Focus budget on high-ROI campaigns.
+
+- Reduce spend on low-performing campaigns to save cost.
+
+### Customer Engagement / Loyalty
+
+- Target loyal customers with personalized offers.
+
+- Encourage repeat purchases through reward programs(like free delivery).
+
+### Customer Satisfaction
+
+- Quickly address complaints and negative feedback.
+
+- Monitor ratings and sentiment to improve service quality.
+
+### Peak Hour / Time Management
+
+- Prepare extra delivery capacity during peak order hours.
+
+- Use offers to shift demand to off-peak hours.
+
+### Area / Regional Focus
+
+- Allocate stock and delivery staff to high-demand areas.
+
+- Run marketing campaigns in low-demand areas to increase sales.
+
+### Technology / Platform Improvements
+
+- Use dashboards to track performance across campaigns, products, and areas.
+
+- Implement predictive models for demand, sales drop, and delivery delays.
+
+---
+
+# file_name: risk_calculator.py
+
+## 🚨 Machine Learning – Delivery Delay Risk Prediction App
+
+This project includes a **Machine Learning–powered Streamlit application** that predicts **delivery delay (in minutes)** and classifies the **risk level** for Blinkit orders.
+
+The app is designed for **operations managers** to proactively handle delayed deliveries.
+
+---
+
+## 🎯 Objective
+- Predict **how many minutes an order may be delayed**
+- Categorize the delay into:
+  - Low Risk
+  - Medium Risk
+  - High Risk
+- Suggest **immediate operational actions** based on risk level
+
+---
+
+## 🧠 Model Used
+- **Random Forest Regressor**
+- Selected as the best model after comparing multiple algorithms
+- Trained using preprocessed Blinkit data
+- Saved as a Pickle file for reuse
+
+**Model file:**
+- `blinkit_best__model.pkl`
+
+---
+
+## ⚙️ ML Pipeline
+The trained model is a complete pipeline that includes:
+- Categorical encoding
+- Numerical feature handling
+- Random Forest regression model
+
+This ensures **consistent preprocessing during both training and prediction**.
+
+---
+
+## 🖥️ Streamlit ML App Features
+
+### 🔹 Manager Inputs (Minimal & Simple)
+The manager only needs to provide:
+- Area
+- Pincode
+- Delivery Hour (0–23)
+- Day of the Week
+- Month
+
+All other features are **automatically filled using safe default values**  
+(median or most frequent values from training data).
+
+---
+
+### 🔹 Internal Default Handling
+To reduce manual input errors:
+- Non-critical fields are auto-filled
+- Defaults are calculated from historical Blinkit data
+- Ensures realistic and stable predictions
+
+---
+
+## 🔮 Prediction Output
+The app predicts:
+- **Expected delivery delay (minutes)**
+- **Delivery risk level**
+- **Risk percentage**
+
+### Risk Classification Logic
+- **Low Risk** → Delay ≤ 15 minutes
+- **Medium Risk** → Delay between 15–30 minutes
+- **High Risk** → Delay > 30 minutes
+
+Early delivery (negative delay) is treated as **zero delay**.
+
+---
+
+## 🚦 Operational Risk Actions
+
+Based on the predicted risk level, the app suggests actions:
+
+### 🔴 High Risk
+- Allocate extra delivery riders
+- Notify customers in advance
+- Prepare contingency delivery plans
+
+### 🟠 Medium Risk
+- Monitor orders closely
+- Keep backup riders ready
+
+### 🟢 Low Risk
+- Continue normal operations
+
+---
+
+## 📊 Business Impact
+- Early identification of delayed orders
+- Better delivery partner planning
+- Reduced customer complaints
+- Improved SLA compliance
+- Data-driven operational decisions
+
+---
+
+## 🔗 Integration Capability
+- Can be integrated into the main Streamlit Business Dashboard
+- Can be extended for real-time prediction using live order data
+- Supports future automation and alert systems
+
+---
+
+## 🚀 Future Enhancements
+- Real-time delay prediction
+- Auto-alerts to operations team
+- Explainable AI for delay reasons
+- Model retraining with live data
+
+---
+
+## 🧠 Summary
+This ML-powered delivery risk calculator transforms historical Blinkit data into **actionable operational intelligence**, enabling proactive delivery management and improved customer experience.
+
+
+
 
