@@ -603,6 +603,362 @@ Based on the predicted risk level, the app suggests actions:
 ## 🧠 Summary
 This ML-powered delivery risk calculator transforms historical Blinkit data into **actionable operational intelligence**, enabling proactive delivery management and improved customer experience.
 
+---
+
+# file_name: rag.ipynb
+
+## 🤖 GenAI / RAG – Customer Feedback Root Cause Analysis
+
+This project includes a **Retrieval Augmented Generation (RAG)** module to analyze **customer feedback stored in SQL** and automatically identify the **root causes of negative feedback** using a Large Language Model (LLM).
+
+---
+
+## 🎯 Objective
+- Analyze customer feedback text at scale
+- Identify **common reasons for negative feedback**
+- Convert unstructured feedback into **actionable business insights**
+- Support customer experience and operations teams
+
+---
+
+## 🗄️ Data Source
+- Feedback data is fetched from the **SQL table `blinkit_data`**
+- Key columns used:
+  - `feedback_text`
+  - `rating`
+  - `sentiment`
+  - `delivery_status`
+  - `area`, `pincode`
+  - `product`, `category`, `brand`
+  - `campaign`, `channel`
+  - `order_total`, `delay_minutes`
+
+---
+
+## 🧹 Text Preprocessing
+Customer feedback text is cleaned before embedding:
+
+- Convert text to lowercase
+- Remove URLs
+- Remove special characters and numbers
+- Remove extra spaces
+- Store cleaned text as `clean_feedback`
+
+This improves embedding quality and retrieval accuracy.
+
+---
+
+## 📄 Document Creation
+- Each row in the dataset is converted into a **single combined text document**
+- All columns are merged into one string (`full_text`)
+- This ensures **business context is preserved** during retrieval
+
+---
+
+## 🧠 Embedding Model
+- **HuggingFace Sentence Transformer**
+- Model used:
+
+`sentence-transformers/all-MiniLM-L6-v2`
+
+This converts feedback and related business data into dense vector embeddings.
+
+---
+
+## 📦 Vector Store
+- **FAISS** is used as the vector database
+- Enables fast semantic search on customer feedback
+- Top **5 most relevant records** are retrieved per question
+
+---
+
+## 🔍 Retrieval Strategy
+- User question is converted into an embedding
+- FAISS retrieves the most relevant feedback records
+- Retrieved records are passed as context to the LLM
+
+---
+
+## 🧾 Prompt Engineering
+A custom prompt is designed to:
+- Act as a **business analyst**
+- Read customer complaints
+- Identify **root causes**
+- Provide **short, clear summaries**
+- Suggest **actionable business improvements**
+
+Response constraints:
+- Maximum 5 lines
+- Friendly and professional tone
+- Business-focused insights
+
+---
+
+## 🧠 LLM Used
+- **Groq LLM**
+- Model: `llama-3.1-8b-instant`
+- Temperature: `0` (deterministic, factual responses)
+
+This ensures consistent and reliable summaries.
+
+---
+
+## ❓ Example Question
+
+---
+
+## 📤 Output
+The system generates:
+- A concise summary of **main complaint themes**
+- Clear identification of root causes such as:
+  - Delivery delays
+  - Poor packaging
+  - Product quality issues
+  - Payment or app-related problems
+- Actionable recommendations for improvement
+
+---
+
+## 📊 Business Impact
+- Converts thousands of feedback records into insights
+- Saves manual analysis time
+- Helps teams fix root problems faster
+- Improves customer satisfaction and retention
+
+---
+
+## 🔗 Integration Possibilities
+- Can be integrated into Streamlit dashboard
+- Supports conversational analytics (Ask your data)
+- Extendable to sales, marketing, and delivery questions
+
+---
+
+## 🚀 Future Enhancements
+- Real-time feedback ingestion
+- Sentiment trend alerts
+- Feedback category prediction
+- Voice-of-customer dashboard
+
+---
+
+## 🧠 Summary
+This RAG-based GenAI module enables **intelligent feedback analysis** by combining SQL data, vector search, and LLMs, turning raw customer complaints into **clear business actions**.
+
+---
+
+# file_name: chatbot.py
+
+# 🛒 Blinkit Business Intelligence & AI Chatbot Project
+
+## 📌 Project Overview
+This project is an **end-to-end Business Decision Platform** built using **Blinkit data**.  
+It integrates **SQL, Python, Data Analysis, Machine Learning, NLP, LLM, and Streamlit** to support **managerial and strategic decision-making**.
+
+A key highlight of this project is an **AI-powered chatbot** designed to **answer manager-level business questions** such as:
+- Why sales are going down?
+- What is the main reason for negative customer feedback?
+- Which area or time has high delivery delays?
+- Which marketing channel performs best?
+
+The chatbot reads data directly from Blinkit’s unified analytical table and responds like a **business manager**, providing **clear, short, and actionable insights** instead of raw technical output.
+
+The project includes:
+- Data integration from **6 tables**
+- SQL-based data modeling
+- Business analytics for multiple teams
+- Machine Learning for delivery delay prediction
+- **Manager-focused AI Chatbot using RAG architecture**
+
+---
+
+## 🎯 Project Objective (Motive)
+- Centralize Blinkit data into a **single analytical table**
+- Provide insights for **Marketing, Sales, Operations, and Customer Experience**
+- Predict **delivery delay** using Machine Learning
+- Build an **AI-powered chatbot** to answer business questions using natural language
+
+---
+
+## 🗂️ Datasets Used (6 Tables)
+
+| File Name |
+|----------|
+| Blinkit - blinkit_products.csv |
+| Blinkit - blinkit_orders.csv |
+| Blinkit - blinkit_order_items.csv |
+| Blinkit - blinkit_marketing_performance.csv |
+| Blinkit - blinkit_customers.csv |
+| Blinkit - blinkit_customer_feedback.csv |
+
+---
+
+## 🛠️ Tech Stack & Libraries Used
+
+### 🔹 Programming & Database
+- Python
+- SQL (MySQL)
+- SQLAlchemy
+
+### 🔹 Data & Visualization
+- Pandas
+- NumPy
+- Matplotlib
+- Seaborn
+
+### 🔹 Machine Learning
+- Scikit-learn
+- Random Forest Regressor
+- Pickle (Model Saving)
+
+### 🔹 NLP & AI
+- LangChain
+- HuggingFace Embeddings
+- FAISS Vector Database
+- Groq LLM (LLaMA 3.1)
+
+### 🔹 Frontend
+- Streamlit
+
+---
+
+## 🧩 Data Architecture (6 Tables → Single Table)
+
+All 6 datasets are:
+1. Loaded using Pandas  
+2. Stored in **MySQL database**
+3. Joined using SQL (`LEFT JOIN`)
+4. Converted into **one unified Blinkit analytical table**
+
+### 🔗 SQL Join Logic
+- Orders → Customers
+- Orders → Order Items → Products
+- Orders → Customer Feedback
+- Orders → Marketing Performance (date based)
+
+This single table is used for:
+- Analytics
+- Machine Learning
+- AI Chatbot
+
+---
+
+## 📊 Business Decision Platform – Team Wise Analysis
+
+---
+
+## 📣 1. Marketing Team Analysis
+- Revenue vs Marketing Spend
+- Channel Performance (Email, Ads, Social)
+- ROAS Analysis
+- Target Audience Effectiveness
+- Campaign wise Revenue Contribution
+
+---
+
+## 💰 2. Sales Team Analysis
+- Total Revenue & Orders per Day
+- Monthly Sales Trend
+- Brand-wise Sales Performance
+- Category-wise Sales Analysis
+- Top-selling Category: **Dairy & Breakfast**
+- High Value Customers
+- Product Margin Analysis
+- High Margin Products: **Frozen Vegetables**
+
+---
+
+## 🚚 3. Delivery / Operations Team Analysis
+- Delivery Partner Load
+- Peak Order Hours (Delay Risk)
+- Area-wise Demand Analysis
+- Delivery Status vs Orders
+
+---
+
+## ⭐ 4. Customer Feedback Analysis
+- Rating vs Sales
+- Sentiment Impact on Revenue
+- Feedback Category Analysis
+- Common Reasons for Negative Feedback
+
+---
+
+## 📉 5. Why Sales Are Down?
+- Sales Drop by Day
+- Marketing Spend Reduction Check
+- Negative Feedback Spike Analysis
+- Delay Impact on Ratings & Orders
+
+---
+
+## 🤖 Machine Learning – Delivery Delay Prediction
+
+### 🎯 ML Objective
+Predict **delivery delay duration** based on:
+- Order details
+- Area
+- Time
+- Delivery status
+- Product & order features
+
+### 🧪 Steps Followed
+1. Data Cleaning & Preprocessing
+2. Feature Encoding
+3. Train-Test Split
+4. Model Training
+5. Model Comparison
+
+### 🏆 Best Model
+- **Random Forest Regressor**
+- Highest accuracy & lowest error
+
+### 💾 Model Deployment
+- Trained model saved using **Pickle**
+- Used for future delay prediction
+
+---
+
+## 🧠 AI Chatbot (RAG – Retrieval Augmented Generation)
+
+### 📌 Purpose
+Allow business users to **ask questions in natural language** like:
+- “Why customers are unhappy?”
+- “Which area has delivery issues?”
+- “What is the common negative feedback?”
+
+---
+
+## 🔄 Chatbot Architecture
+
+1. SQL → Unified Blinkit Table
+2. Text Cleaning (Regex)
+3. Full Row Text Conversion
+4. Vector Embedding (HuggingFace)
+5. FAISS Vector Store
+6. Context Retrieval (Top-K)
+7. LLM Answer Generation (Groq – LLaMA 3.1)
+
+---
+
+## 🧼 Text Preprocessing
+- Lowercasing
+- URL removal
+- Special character removal
+- Whitespace normalization
+
+---
+
+## 💬 Streamlit Chatbot Features
+- Interactive chat UI
+- Chat memory (session based)
+- Business-friendly responses
+- Actionable insights
+- Fast LLM response using Groq
+
+
+
+
 
 
 
