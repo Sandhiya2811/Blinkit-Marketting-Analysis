@@ -747,7 +747,7 @@ This RAG-based GenAI module enables **intelligent feedback analysis** by combini
 
 ---
 
-# file_name: chatbot.py
+# file_name: blinkit_chatbot.py
 
 # 🛒 Blinkit Business Intelligence & AI Chatbot Project
 
