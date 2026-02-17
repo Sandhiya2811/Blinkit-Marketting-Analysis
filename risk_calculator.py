@@ -14,6 +14,11 @@ with open("blinkit_best__model.pkl", "rb") as f:
 # -------------------------------
 ml_data = pd.read_csv("blinkit_data.csv")
 
+# -------------------------------------------------
+# PAGE CONFIG
+# -------------------------------------------------
+st.set_page_config(page_title="Delay Time Prediction", layout="wide")
+
 st.title("🚨 Blinkit Delivery Risk Calculator")
 st.subheader("Manager Input")
 
@@ -126,3 +131,4 @@ if st.button("Predict Delay"):
 
     for a in actions:
         st.write("-", a)
+
